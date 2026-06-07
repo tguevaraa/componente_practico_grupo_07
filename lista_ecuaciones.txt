@@ -1,0 +1,6 @@
+Ecuación: 1.0y'' +2.0y' +3.0y = 0
+Caso 3: Raíces complejas
+Raíces: -1 ± 1i
+Solución general: y(x) = e^(-1x) * [C1*cos(1x) + C2*sin(1x)]
+
+============================================================
