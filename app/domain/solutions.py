@@ -25,7 +25,8 @@ class Solucion(ABC):
 
     @staticmethod
     def _fmt_val(val: float) -> str:
-        return str(round(val))
+        r = round(val)
+        return str(r) if r != 0 else '1'
 
     def _fmt_exp(self, val: float) -> str:
         v = round(val)
