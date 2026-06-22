@@ -23,16 +23,25 @@ class Solucion(ABC):
         """Retorna la solución como diccionario serializable para la API web."""
         pass
 
+    @staticmethod
+    def _fmt_val(val: float) -> str:
+        """Muestra entero si es número entero, si no hasta 4 cifras significativas."""
+        rounded = round(val, 9)
+        if rounded == int(rounded):
+            return str(int(rounded))
+        return f'{val:.4g}'
+
     def _fmt_exp(self, val: float) -> str:
         """Formatea un coeficiente numérico para un exponente LaTeX."""
-        if val == 0:
+        v = round(val, 9)
+        if v == 0:
             return '0'
-        if val == 1:
+        if v == 1:
             return ''
-        if val == -1:
+        if v == -1:
             return '-'
-        if val == int(val):
-            return str(int(val))
+        if v == int(v):
+            return str(int(v))
         return f'{val:.4g}'
 
 
@@ -59,11 +68,12 @@ class SolucionRealesDistintas(Solucion):
 
     def to_dict(self) -> dict:
         e1, e2 = self._fmt_exp(self.r1), self._fmt_exp(self.r2)
+        v1, v2 = self._fmt_val(self.r1), self._fmt_val(self.r2)
         return {
             'tipo': 'Raíces reales y distintas',
             'caso': 1,
             'raices': {'r1': self.r1, 'r2': self.r2},
-            'raices_latex': f'r_1 = {self.r1:.4g}, \\quad r_2 = {self.r2:.4g}',
+            'raices_latex': f'r_1 = {v1}, \\quad r_2 = {v2}',
             'solucion_latex': f'y(x) = C_1\\, e^{{{e1}x}} + C_2\\, e^{{{e2}x}}',
         }
 
@@ -89,11 +99,12 @@ class SolucionRealesIguales(Solucion):
 
     def to_dict(self) -> dict:
         e = self._fmt_exp(self.r)
+        vr = self._fmt_val(self.r)
         return {
             'tipo': 'Raíces reales e iguales',
             'caso': 2,
             'raices': {'r': self.r},
-            'raices_latex': f'r = {self.r:.4g} \\;(\\text{{raíz doble}})',
+            'raices_latex': f'r = {vr} \\;(\\text{{raíz doble}})',
             'solucion_latex': f'y(x) = (C_1 + C_2\\, x)\\, e^{{{e}x}}',
         }
 
@@ -120,8 +131,9 @@ class SolucionComplejas(Solucion):
 
     def to_dict(self) -> dict:
         real = 0.0 if self.real == 0 else self.real  # normaliza -0.0
-        b_str = f'{self.imag:.4g}'
+        b_str = self._fmt_val(self.imag)
         ea = self._fmt_exp(real)
+        vreal = self._fmt_val(real)
         if real == 0:
             sol = f'y(x) = C_1 \\cos({b_str}x) + C_2 \\sin({b_str}x)'
         else:
@@ -131,6 +143,6 @@ class SolucionComplejas(Solucion):
             'tipo': 'Raíces complejas conjugadas',
             'caso': 3,
             'raices': {'real': real, 'imag': self.imag},
-            'raices_latex': f'r = {real:.4g} \\pm {self.imag:.4g}\\,i',
+            'raices_latex': f'r = {vreal} \\pm {b_str}\\,i',
             'solucion_latex': sol,
         }

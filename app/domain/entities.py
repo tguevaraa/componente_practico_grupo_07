@@ -19,7 +19,13 @@ class EcuacionSegundoOrden:
         
     def obtener_representacion(self) -> str:
         """Retorna la representación formal de la ecuación diferencial."""
-        return f"{self.a}y'' {self.b:+}y' {self.c:+}y = 0"
+        def fmt(v):
+            r = round(v, 9)
+            return str(int(r)) if r == int(r) else f'{v:g}'
+        a, b, c = fmt(self.a), fmt(self.b), fmt(self.c)
+        b_sign = f'+{b}' if self.b >= 0 else b
+        c_sign = f'+{c}' if self.c >= 0 else c
+        return f"{a}y'' {b_sign}y' {c_sign}y = 0"
         
     def to_latex(self) -> str:
         """Retorna la ecuación como string LaTeX limpio para MathJax."""
