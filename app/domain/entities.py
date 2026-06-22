@@ -54,17 +54,15 @@ class EcuacionSegundoOrden:
 
     def resolver(self) -> Solucion:
         """Resuelve la ecuación y retorna el objeto Solucion correspondiente."""
-        match self.discriminante:
-            case d if d > 0:
-                r1 = (-self.b + math.sqrt(d)) / (2 * self.a)
-                r2 = (-self.b - math.sqrt(d)) / (2 * self.a)
-                return SolucionRealesDistintas(r1, r2)
-                
-            case 0:
-                r = -self.b / (2 * self.a)
-                return SolucionRealesIguales(r)
-                
-            case _:
-                real = -self.b / (2 * self.a)
-                imag = math.sqrt(-self.discriminante) / (2 * self.a)
-                return SolucionComplejas(real, imag)
+        d = self.discriminante
+        if d > 0:
+            r1 = (-self.b + math.sqrt(d)) / (2 * self.a)
+            r2 = (-self.b - math.sqrt(d)) / (2 * self.a)
+            return SolucionRealesDistintas(r1, r2)
+        elif d == 0:
+            r = -self.b / (2 * self.a)
+            return SolucionRealesIguales(r)
+        else:
+            real = -self.b / (2 * self.a)
+            imag = math.sqrt(-d) / (2 * self.a)
+            return SolucionComplejas(real, imag)
