@@ -1,12 +1,16 @@
 import json
 import os
+import tempfile
 from datetime import datetime
 
 
 class WebGestorPersistencia:
     """Persistencia JSON para la interfaz web. Diseñada para migrar a Google Drive."""
 
-    def __init__(self, ruta_archivo: str = 'ecuaciones_web.json'):
+    def __init__(self, ruta_archivo: str = None):
+        # Usa /tmp en Vercel (solo lectura en /var/task) y AppData\Local\Temp en Windows
+        if ruta_archivo is None:
+            ruta_archivo = os.path.join(tempfile.gettempdir(), 'ecuaciones_web.json')
         self.ruta_archivo = ruta_archivo
         if not os.path.exists(self.ruta_archivo):
             with open(self.ruta_archivo, 'w', encoding='utf-8') as f:
