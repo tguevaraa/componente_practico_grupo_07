@@ -25,24 +25,14 @@ class Solucion(ABC):
 
     @staticmethod
     def _fmt_val(val: float) -> str:
-        """Muestra entero si es número entero, si no hasta 4 cifras significativas."""
-        rounded = round(val, 9)
-        if rounded == int(rounded):
-            return str(int(rounded))
-        return f'{val:.4g}'
+        return str(round(val))
 
     def _fmt_exp(self, val: float) -> str:
-        """Formatea un coeficiente numérico para un exponente LaTeX."""
-        v = round(val, 9)
-        if v == 0:
-            return '0'
-        if v == 1:
-            return ''
-        if v == -1:
-            return '-'
-        if v == int(v):
-            return str(int(v))
-        return f'{val:.4g}'
+        v = round(val)
+        if v == 0:   return '0'
+        if v == 1:   return ''
+        if v == -1:  return '-'
+        return str(v)
 
 
 class SolucionRealesDistintas(Solucion):
