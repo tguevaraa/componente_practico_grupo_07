@@ -21,6 +21,37 @@ class EcuacionSegundoOrden:
         """Retorna la representación formal de la ecuación diferencial."""
         return f"{self.a}y'' {self.b:+}y' {self.c:+}y = 0"
         
+    def to_latex(self) -> str:
+        """Retorna la ecuación como string LaTeX limpio para MathJax."""
+        parts = []
+
+        def add_term(coef, var):
+            if coef == 0:
+                return
+            c = int(coef) if coef == int(coef) else coef
+            is_first = len(parts) == 0
+            if is_first:
+                if c == 1:
+                    parts.append(var)
+                elif c == -1:
+                    parts.append(f'-{var}')
+                else:
+                    parts.append(f'{c:g}{var}')
+            else:
+                if c == 1:
+                    parts.append(f'+ {var}')
+                elif c == -1:
+                    parts.append(f'- {var}')
+                elif c > 0:
+                    parts.append(f'+ {c:g}{var}')
+                else:
+                    parts.append(f'- {abs(c):g}{var}')
+
+        add_term(self.a, "y''")
+        add_term(self.b, "y'")
+        add_term(self.c, 'y')
+        return ' '.join(parts) + ' = 0'
+
     def resolver(self) -> Solucion:
         """Resuelve la ecuación y retorna el objeto Solucion correspondiente."""
         match self.discriminante:

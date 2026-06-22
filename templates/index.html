@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solucionador de EDO · 2.º Orden</title>
+  <link rel="stylesheet" href="/static/style.css" />
+
+  <!-- MathJax 3 -->
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+      },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea'] },
+    };
+  </script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+
+<body>
+  <!-- ===== HEADER ===== -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div>
+        <h1>Solucionador de EDO</h1>
+        <p>Ecuaciones Diferenciales Homogéneas de Segundo Orden</p>
+      </div>
+      <span class="header-badge">POO · UNEMI</span>
+    </div>
+  </header>
+
+  <!-- ===== ALERT ===== -->
+  <div id="alert" class="alert hidden" role="alert">
+    <span id="alert-msg"></span>
+    <button class="alert-close" onclick="closeAlert()">✕</button>
+  </div>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main-content">
+
+    <!-- Workspace: input + result side-by-side -->
+    <div class="workspace">
+
+      <!-- INPUT CARD -->
+      <section class="card input-card">
+        <h2 class="card-title">Ingresar Ecuación</h2>
+        <p class="formula-hint">\( ay'' + by' + cy = 0 \)</p>
+
+        <form id="form-ec" novalidate>
+          <div class="field-group">
+            <label for="coef-a">Coeficiente <em>a</em></label>
+            <input id="coef-a" type="number" step="any" value="1"
+                   placeholder="≠ 0" required />
+            <span class="field-hint">multiplica a y''</span>
+          </div>
+          <div class="field-group">
+            <label for="coef-b">Coeficiente <em>b</em></label>
+            <input id="coef-b" type="number" step="any" value="0"
+                   placeholder="0" required />
+            <span class="field-hint">multiplica a y'</span>
+          </div>
+          <div class="field-group">
+            <label for="coef-c">Coeficiente <em>c</em></label>
+            <input id="coef-c" type="number" step="any" value="0"
+                   placeholder="0" required />
+            <span class="field-hint">multiplica a y</span>
+          </div>
+
+          <button type="submit" id="btn-resolver" class="btn-primary">
+            <span class="btn-text">Resolver</span>
+            <span class="btn-spinner hidden">&#9696;</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- RESULT CARD -->
+      <section class="card result-card" id="result-card">
+        <div class="result-empty" id="result-empty">
+          <div class="result-empty-icon">&#8706;</div>
+          <p>El resultado aparecerá aquí.</p>
+        </div>
+        <div id="result-content" class="hidden"></div>
+      </section>
+
+    </div><!-- /workspace -->
+
+    <!-- HISTORY CARD -->
+    <section class="card history-card">
+      <div class="history-header">
+        <h2 class="card-title" style="margin:0">Ecuaciones Guardadas</h2>
+        <button id="btn-pdf" class="btn-pdf" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+               viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Descargar PDF
+        </button>
+      </div>
+
+      <div id="historial">
+        <p class="empty-msg">No hay ecuaciones guardadas aún.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="app-footer">
+    <p>Programación Orientada a Objetos &middot; UNEMI &middot; 4.º Semestre</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

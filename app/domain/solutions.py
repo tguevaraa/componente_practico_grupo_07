@@ -7,16 +7,33 @@ class Solucion(ABC):
     Clase base abstracta que define la interfaz para las soluciones de una ecuación
     diferencial de segundo orden.
     """
-    
+
     @abstractmethod
     def mostrar_consola(self, ecuacion_str: str) -> None:
         """Muestra los resultados de la solución en la consola."""
         pass
-        
+
     @abstractmethod
     def guardar_en_archivo(self, archivo, ecuacion_str: str) -> None:
         """Escribe los resultados de la solución en el archivo proporcionado."""
         pass
+
+    @abstractmethod
+    def to_dict(self) -> dict:
+        """Retorna la solución como diccionario serializable para la API web."""
+        pass
+
+    def _fmt_exp(self, val: float) -> str:
+        """Formatea un coeficiente numérico para un exponente LaTeX."""
+        if val == 0:
+            return '0'
+        if val == 1:
+            return ''
+        if val == -1:
+            return '-'
+        if val == int(val):
+            return str(int(val))
+        return f'{val:.4g}'
 
 
 class SolucionRealesDistintas(Solucion):
@@ -40,6 +57,16 @@ class SolucionRealesDistintas(Solucion):
         archivo.write(f"Solución general: y(x) = C1*e^({self.r1:.0f}x) + C2*e^({self.r2:.0f}x)\n")
         archivo.write("\n" + "=" * 60 + "\n")
 
+    def to_dict(self) -> dict:
+        e1, e2 = self._fmt_exp(self.r1), self._fmt_exp(self.r2)
+        return {
+            'tipo': 'Raíces reales y distintas',
+            'caso': 1,
+            'raices': {'r1': self.r1, 'r2': self.r2},
+            'raices_latex': f'r_1 = {self.r1:.4g}, \\quad r_2 = {self.r2:.4g}',
+            'solucion_latex': f'y(x) = C_1\\, e^{{{e1}x}} + C_2\\, e^{{{e2}x}}',
+        }
+
 
 class SolucionRealesIguales(Solucion):
     """Representa la solución para el Caso 2: Raíces reales e iguales."""
@@ -59,6 +86,16 @@ class SolucionRealesIguales(Solucion):
         archivo.write(f"Raíz doble: {self.r:.0f}\n")
         archivo.write(f"Solución general: y(x) = (C1 + C2*x)*e^({self.r:.0f}x)\n")
         archivo.write("\n" + "=" * 60 + "\n")
+
+    def to_dict(self) -> dict:
+        e = self._fmt_exp(self.r)
+        return {
+            'tipo': 'Raíces reales e iguales',
+            'caso': 2,
+            'raices': {'r': self.r},
+            'raices_latex': f'r = {self.r:.4g} \\;(\\text{{raíz doble}})',
+            'solucion_latex': f'y(x) = (C_1 + C_2\\, x)\\, e^{{{e}x}}',
+        }
 
 
 class SolucionComplejas(Solucion):
@@ -80,3 +117,20 @@ class SolucionComplejas(Solucion):
         archivo.write(f"Raíces: {self.real:.0f} ± {self.imag:.0f}i\n")
         archivo.write(f"Solución general: y(x) = e^({self.real:.0f}x) * [C1*cos({self.imag:.0f}x) + C2*sin({self.imag:.0f}x)]\n")
         archivo.write("\n" + "=" * 60 + "\n")
+
+    def to_dict(self) -> dict:
+        real = 0.0 if self.real == 0 else self.real  # normaliza -0.0
+        b_str = f'{self.imag:.4g}'
+        ea = self._fmt_exp(real)
+        if real == 0:
+            sol = f'y(x) = C_1 \\cos({b_str}x) + C_2 \\sin({b_str}x)'
+        else:
+            sol = (f'y(x) = e^{{{ea}x}}\\left[C_1 \\cos({b_str}x) + '
+                   f'C_2 \\sin({b_str}x)\\right]')
+        return {
+            'tipo': 'Raíces complejas conjugadas',
+            'caso': 3,
+            'raices': {'real': real, 'imag': self.imag},
+            'raices_latex': f'r = {real:.4g} \\pm {self.imag:.4g}\\,i',
+            'solucion_latex': sol,
+        }
