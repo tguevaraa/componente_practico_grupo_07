@@ -30,7 +30,7 @@ class Solucion(ABC):
 
     def _fmt_exp(self, val: float) -> str:
         v = round(val)
-        if v == 0:   return '0'
+        if v == 0:   return ''   # 0 → 1 → e^{x}
         if v == 1:   return ''
         if v == -1:  return '-'
         return str(v)
