@@ -314,5 +314,105 @@ body {
   margin-top: auto;
 }
 
+/* ===== AUTH HEADER ===== */
+.auth-area {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+.auth-user {
+  font-size: .82rem;
+  color: rgba(255,255,255,.85);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btn-auth {
+  padding: .35rem .9rem;
+  border-radius: 20px;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid rgba(255,255,255,.6);
+  transition: background .2s, color .2s;
+  white-space: nowrap;
+}
+.btn-login  { background: rgba(255,255,255,.15); color: #fff; }
+.btn-login:hover { background: rgba(255,255,255,.3); }
+.btn-logout { background: transparent; color: rgba(255,255,255,.8); }
+.btn-logout:hover { background: rgba(255,255,255,.15); color: #fff; }
+
+/* ===== MODAL ===== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.modal-box {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 40px rgba(0,0,0,.25);
+  padding: 2rem 2rem 1.75rem;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+}
+.modal-close {
+  position: absolute;
+  top: .75rem;
+  right: .9rem;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 .25rem;
+}
+.modal-close:hover { color: var(--text); }
+
+.modal-tabs {
+  display: flex;
+  gap: .25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid var(--border);
+}
+.modal-tab {
+  background: none;
+  border: none;
+  padding: .5rem 1rem;
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color .2s, border-color .2s;
+}
+.modal-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.modal-desc {
+  font-size: .88rem;
+  color: var(--muted);
+  margin-bottom: 1.1rem;
+  line-height: 1.4;
+}
+
+.auth-error {
+  font-size: .85rem;
+  color: #c62828;
+  background: #ffebee;
+  border-radius: 6px;
+  padding: .5rem .75rem;
+  margin-top: .5rem;
+}
+
 /* ===== UTILS ===== */
 .hidden { display: none !important; }

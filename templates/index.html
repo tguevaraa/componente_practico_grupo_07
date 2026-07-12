@@ -29,8 +29,47 @@
         <p>Ecuaciones Diferenciales Homogéneas de Segundo Orden</p>
       </div>
       <span class="header-badge">POO · UNEMI</span>
+      <div id="auth-area" class="auth-area">
+        <span id="auth-user" class="auth-user hidden"></span>
+        <button id="btn-logout" class="btn-auth btn-logout hidden" onclick="handleLogout()">Cerrar sesión</button>
+        <button id="btn-open-auth" class="btn-auth btn-login" onclick="openAuthModal('login')">Iniciar sesión</button>
+      </div>
     </div>
   </header>
+
+  <!-- ===== MODAL AUTH ===== -->
+  <div id="auth-modal" class="modal-backdrop hidden" onclick="closeAuthModal(event)">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-label="Autenticación">
+
+      <!-- Tabs -->
+      <div class="modal-tabs">
+        <button id="tab-login"    class="modal-tab active"  onclick="switchTab('login')">Iniciar sesión</button>
+        <button id="tab-register" class="modal-tab"         onclick="switchTab('register')">Registrarse</button>
+      </div>
+
+      <!-- Formulario -->
+      <form id="auth-form" novalidate>
+        <p class="modal-desc" id="modal-desc">Inicia sesión para descargar PDF ilimitado.</p>
+
+        <div class="field-group">
+          <label for="auth-email">Correo electrónico</label>
+          <input id="auth-email" type="email" placeholder="tu@correo.com" autocomplete="email" required />
+        </div>
+        <div class="field-group">
+          <label for="auth-password">Contraseña</label>
+          <input id="auth-password" type="password" placeholder="••••••" autocomplete="current-password" required />
+        </div>
+
+        <p id="auth-error" class="auth-error hidden"></p>
+
+        <button type="submit" id="btn-auth-submit" class="btn-primary" style="margin-top:.5rem">
+          <span id="auth-btn-text">Ingresar</span>
+        </button>
+      </form>
+
+      <button class="modal-close" onclick="closeAuthModal()" aria-label="Cerrar">&times;</button>
+    </div>
+  </div>
 
   <!-- ===== ALERT ===== -->
   <div id="alert" class="alert hidden" role="alert">
