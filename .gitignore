@@ -6,3 +6,4 @@ ecuaciones_web.json
 lista_ecuaciones.txt
 *.pdf
 .vercel/
+.claude/settings.local.json
