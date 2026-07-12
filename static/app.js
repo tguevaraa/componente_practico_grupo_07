@@ -3,18 +3,23 @@
    Historial en localStorage → funciona en local y en Vercel
    ============================================================ */
 
-const STORAGE_KEY = 'edo_historial';
+const STORAGE_KEY_BASE = 'edo_historial';
+
+// Clave dinámica: por usuario si hay sesión, anónima si no
+function storageKey() {
+  return _authUser ? `${STORAGE_KEY_BASE}_${_authUser}` : STORAGE_KEY_BASE;
+}
 
 // ------------------------------------------------------------------
 // localStorage — historial del cliente
 // ------------------------------------------------------------------
 function storageLoad() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  try { return JSON.parse(localStorage.getItem(storageKey()) || '[]'); }
   catch { return []; }
 }
 
 function storageSave(lista) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
+  localStorage.setItem(storageKey(), JSON.stringify(lista));
 }
 
 function storageAdd(datos) {
@@ -286,8 +291,10 @@ function renderAuthArea() {
 
 async function handleLogout() {
   await fetch('/api/auth/logout', { method: 'POST' });
-  _authUser = null;
+  _authUser   = null;
+  _authNombre = null;
   renderAuthArea();
+  loadHistory();  // mostrar historial anónimo al cerrar sesión
 }
 
 // ------------------------------------------------------------------
@@ -390,8 +397,10 @@ async function handleAuthSubmit(e) {
       return;
     }
 
-    _authUser = data.email;
+    _authUser   = data.email;
+    _authNombre = data.nombres || data.email;
     renderAuthArea();
+    loadHistory();  // recargar historial con la key del usuario
     document.getElementById('auth-modal').classList.add('hidden');
     document.getElementById('auth-form').reset();
 
