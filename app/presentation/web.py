@@ -20,10 +20,9 @@ flask_app = Flask(
 
 flask_app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-edo-unemi-2024')
 
-_DB_URL = os.environ.get(
-    'DATABASE_URL',
-    'mysql+pymysql://root:aqFvCTSKpezdQzGjrnZbOEuYQpQqHmCU@tokaido.proxy.rlwy.net:48787/railway'
-)
+_DB_URL = os.environ.get('DATABASE_URL')
+if not _DB_URL:
+    raise RuntimeError('DATABASE_URL no está configurada. Agrégala al archivo .env')
 flask_app.config['SQLALCHEMY_DATABASE_URI'] = _DB_URL
 flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
