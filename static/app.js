@@ -238,15 +238,18 @@ async function handleDownloadPDF() {
 // ------------------------------------------------------------------
 // Auth state
 // ------------------------------------------------------------------
-let _authUser = null;  // email o null
+let _authUser   = null;  // email o null
+let _authNombre = null;  // nombre para mostrar en header
 
 async function checkAuthStatus() {
   try {
     const res = await fetch('/api/auth/status');
     const data = await res.json();
-    _authUser = data.logged_in ? data.email : null;
+    _authUser   = data.logged_in ? data.email   : null;
+    _authNombre = data.logged_in ? data.nombres : null;
   } catch {
-    _authUser = null;
+    _authUser   = null;
+    _authNombre = null;
   }
   renderAuthArea();
 }
@@ -257,7 +260,7 @@ function renderAuthArea() {
   const loginBtn  = document.getElementById('btn-open-auth');
 
   if (_authUser) {
-    userEl.textContent = _authUser;
+    userEl.textContent = _authNombre ? `Hola, ${_authNombre.split(' ')[0]}` : _authUser;
     userEl.classList.remove('hidden');
     logoutBtn.classList.remove('hidden');
     loginBtn.classList.add('hidden');
@@ -301,11 +304,13 @@ function switchTab(tab) {
   document.getElementById('auth-btn-text').textContent = tab === 'login' ? 'Ingresar' : 'Crear cuenta';
   document.getElementById('modal-desc').textContent = tab === 'login'
     ? 'Inicia sesión para descargar PDF ilimitado.'
-    : 'Crea una cuenta gratuita para PDF sin límite.';
+    : 'Crea tu cuenta gratuita — solo toma un momento.';
   document.getElementById('auth-error').classList.add('hidden');
-  document.getElementById('auth-password').setAttribute(
-    'autocomplete', tab === 'login' ? 'current-password' : 'new-password'
-  );
+
+  const isRegister = tab === 'register';
+  document.getElementById('fields-login').classList.toggle('hidden', isRegister);
+  document.getElementById('fields-register').classList.toggle('hidden', !isRegister);
+  document.querySelector('.modal-box').classList.toggle('wide', isRegister);
 }
 
 async function handleAuthSubmit(e) {
@@ -318,13 +323,32 @@ async function handleAuthSubmit(e) {
   errEl.classList.add('hidden');
   submitBtn.disabled = true;
 
-  const endpoint = _currentTab === 'login' ? '/api/auth/login' : '/api/auth/register';
+  const isRegister = _currentTab === 'register';
+  const endpoint   = isRegister ? '/api/auth/register' : '/api/auth/login';
+
+  let body;
+  if (isRegister) {
+    body = {
+      email:            document.getElementById('reg-email').value.trim(),
+      password:         document.getElementById('reg-password').value,
+      nombres:          document.getElementById('reg-nombres').value.trim(),
+      fecha_nacimiento: document.getElementById('reg-fecha').value || null,
+      pais:             document.getElementById('reg-pais').value.trim(),
+      provincia:        document.getElementById('reg-provincia').value.trim(),
+      ciudad:           document.getElementById('reg-ciudad').value.trim(),
+      rol:              document.getElementById('reg-rol').value || null,
+      nivel:            document.getElementById('reg-nivel').value || null,
+      institucion:      document.getElementById('reg-institucion').value.trim(),
+    };
+  } else {
+    body = { email, password };
+  }
 
   try {
     const res  = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
 

@@ -51,13 +51,71 @@
       <form id="auth-form" novalidate>
         <p class="modal-desc" id="modal-desc">Inicia sesión para descargar PDF ilimitado.</p>
 
-        <div class="field-group">
-          <label for="auth-email">Correo electrónico</label>
-          <input id="auth-email" type="email" placeholder="tu@correo.com" autocomplete="email" required />
+        <!-- Campos solo para login -->
+        <div id="fields-login">
+          <div class="field-group">
+            <label for="auth-email">Correo electrónico</label>
+            <input id="auth-email" type="email" placeholder="tu@correo.com" autocomplete="email" required />
+          </div>
+          <div class="field-group">
+            <label for="auth-password">Contraseña</label>
+            <input id="auth-password" type="password" placeholder="••••••" autocomplete="current-password" />
+          </div>
         </div>
-        <div class="field-group">
-          <label for="auth-password">Contraseña</label>
-          <input id="auth-password" type="password" placeholder="••••••" autocomplete="current-password" required />
+
+        <!-- Campos extra solo para registro -->
+        <div id="fields-register" class="hidden">
+          <div class="register-grid">
+            <div class="field-group">
+              <label for="reg-nombres">Nombres completos</label>
+              <input id="reg-nombres" type="text" placeholder="Ej. María López" autocomplete="name" />
+            </div>
+            <div class="field-group">
+              <label for="reg-email">Correo electrónico</label>
+              <input id="reg-email" type="email" placeholder="tu@correo.com" autocomplete="email" />
+            </div>
+            <div class="field-group">
+              <label for="reg-password">Contraseña</label>
+              <input id="reg-password" type="password" placeholder="Mín. 6 caracteres" autocomplete="new-password" />
+            </div>
+            <div class="field-group">
+              <label for="reg-fecha">Fecha de nacimiento</label>
+              <input id="reg-fecha" type="date" />
+            </div>
+            <div class="field-group">
+              <label for="reg-pais">País</label>
+              <input id="reg-pais" type="text" placeholder="Ej. Ecuador" />
+            </div>
+            <div class="field-group">
+              <label for="reg-provincia">Provincia / Estado</label>
+              <input id="reg-provincia" type="text" placeholder="Ej. Guayas" />
+            </div>
+            <div class="field-group">
+              <label for="reg-ciudad">Ciudad</label>
+              <input id="reg-ciudad" type="text" placeholder="Ej. Guayaquil" />
+            </div>
+            <div class="field-group">
+              <label for="reg-rol">Soy</label>
+              <select id="reg-rol">
+                <option value="">— selecciona —</option>
+                <option value="estudiante">Estudiante</option>
+                <option value="maestro">Maestro / Docente</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="reg-nivel">Nivel educativo</label>
+              <select id="reg-nivel">
+                <option value="">— selecciona —</option>
+                <option value="bachiller">Bachillerato</option>
+                <option value="grado">Grado (Universidad)</option>
+                <option value="postgrado">Posgrado</option>
+              </select>
+            </div>
+            <div class="field-group field-group--full">
+              <label for="reg-institucion">Unidad educativa / Universidad</label>
+              <input id="reg-institucion" type="text" placeholder="Ej. UNEMI" />
+            </div>
+          </div>
         </div>
 
         <p id="auth-error" class="auth-error hidden"></p>

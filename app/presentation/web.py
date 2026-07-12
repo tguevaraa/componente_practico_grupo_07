@@ -37,9 +37,17 @@ PDF_FREE_LIMIT = 4
 class Usuario(db.Model):
     __tablename__ = 'usuarios'
 
-    id       = db.Column(db.Integer, primary_key=True)
-    email    = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(64), nullable=False)
+    id                 = db.Column(db.Integer, primary_key=True)
+    email              = db.Column(db.String(120), unique=True, nullable=False)
+    password           = db.Column(db.String(64),  nullable=False)
+    nombres            = db.Column(db.String(120),  nullable=False)
+    fecha_nacimiento   = db.Column(db.Date,         nullable=True)
+    pais               = db.Column(db.String(80),   nullable=True)
+    provincia          = db.Column(db.String(80),   nullable=True)
+    ciudad             = db.Column(db.String(80),   nullable=True)
+    rol                = db.Column(db.String(20),   nullable=True)   # 'estudiante' | 'maestro'
+    nivel              = db.Column(db.String(20),   nullable=True)   # 'bachiller' | 'grado' | 'postgrado'
+    institucion        = db.Column(db.String(180),  nullable=True)
 
     def verificar_password(self, password: str) -> bool:
         return self.password == _hash(password)
@@ -49,7 +57,6 @@ def _hash(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 
-# Crear tabla si no existe
 with flask_app.app_context():
     db.create_all()
 
@@ -73,30 +80,53 @@ def index():
 
 @flask_app.route('/api/auth/status', methods=['GET'])
 def auth_status():
-    email = session.get('user')
-    return jsonify({'logged_in': email is not None, 'email': email})
+    email   = session.get('user')
+    nombres = session.get('nombres')
+    return jsonify({'logged_in': email is not None, 'email': email, 'nombres': nombres})
 
 
 @flask_app.route('/api/auth/register', methods=['POST'])
 def auth_register():
-    data     = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True) or {}
+
     email    = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
+    nombres  = (data.get('nombres') or '').strip()
 
-    if not email or not password:
-        return jsonify({'error': 'Email y contraseña son requeridos.'}), 400
+    if not email or not password or not nombres:
+        return jsonify({'error': 'Email, nombre y contraseña son requeridos.'}), 400
     if len(password) < 6:
         return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres.'}), 400
-
     if Usuario.query.filter_by(email=email).first():
         return jsonify({'error': 'Ese correo ya está registrado.'}), 409
 
-    usuario = Usuario(email=email, password=_hash(password))
+    from datetime import date
+    raw_fecha = data.get('fecha_nacimiento') or ''
+    fecha = None
+    if raw_fecha:
+        try:
+            fecha = date.fromisoformat(raw_fecha)
+        except ValueError:
+            pass
+
+    usuario = Usuario(
+        email            = email,
+        password         = _hash(password),
+        nombres          = nombres,
+        fecha_nacimiento = fecha,
+        pais             = (data.get('pais') or '').strip() or None,
+        provincia        = (data.get('provincia') or '').strip() or None,
+        ciudad           = (data.get('ciudad') or '').strip() or None,
+        rol              = data.get('rol') or None,
+        nivel            = data.get('nivel') or None,
+        institucion      = (data.get('institucion') or '').strip() or None,
+    )
     db.session.add(usuario)
     db.session.commit()
 
     session['user'] = email
-    return jsonify({'ok': True, 'email': email}), 201
+    session['nombres'] = nombres
+    return jsonify({'ok': True, 'email': email, 'nombres': nombres}), 201
 
 
 @flask_app.route('/api/auth/login', methods=['POST'])
@@ -109,13 +139,15 @@ def auth_login():
     if not usuario or not usuario.verificar_password(password):
         return jsonify({'error': 'Correo o contraseña incorrectos.'}), 401
 
-    session['user'] = email
-    return jsonify({'ok': True, 'email': email})
+    session['user']    = email
+    session['nombres'] = usuario.nombres
+    return jsonify({'ok': True, 'email': email, 'nombres': usuario.nombres})
 
 
 @flask_app.route('/api/auth/logout', methods=['POST'])
 def auth_logout():
     session.pop('user', None)
+    session.pop('nombres', None)
     return jsonify({'ok': True})
 
 

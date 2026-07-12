@@ -414,5 +414,36 @@ body {
   margin-top: .5rem;
 }
 
+/* Grid del formulario de registro */
+.register-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+}
+.register-grid .field-group--full {
+  grid-column: 1 / -1;
+}
+@media (max-width: 500px) {
+  .register-grid { grid-template-columns: 1fr; }
+}
+
+/* Modal más ancho en registro */
+.modal-box.wide { max-width: 560px; }
+
+/* Select igual que input */
+.field-group select {
+  width: 100%;
+  padding: .6rem .9rem;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #fafafa;
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s;
+  appearance: auto;
+}
+.field-group select:focus { border-color: var(--primary-light); background: #fff; }
+
 /* ===== UTILS ===== */
 .hidden { display: none !important; }
