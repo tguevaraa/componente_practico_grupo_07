@@ -298,6 +298,7 @@ async function checkAuthStatus() {
     _authNombre = null;
   }
   renderAuthArea();
+  await loadHistory();  // cargar historial DESPUÉS de saber quién es el usuario
 }
 
 function renderAuthArea() {
@@ -448,8 +449,7 @@ async function handleAuthSubmit(e) {
 // Init
 // ------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-  checkAuthStatus();
-  loadHistory();
+  checkAuthStatus();  // llama loadHistory() internamente
 
   document.getElementById('form-ec').addEventListener('submit', async (e) => {
     e.preventDefault();
