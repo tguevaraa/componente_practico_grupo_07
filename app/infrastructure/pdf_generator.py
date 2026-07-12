@@ -1,4 +1,10 @@
+import io
 import tempfile
+
+import matplotlib
+matplotlib.use('Agg')  # backend sin pantalla
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
@@ -7,10 +13,58 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import (
     HRFlowable,
+    Image,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
 )
+
+rcParams['mathtext.fontset'] = 'cm'   # Computer Modern — igual que LaTeX/MathJax
+
+
+def _fmt_int(v: float) -> str:
+    """Formatea un float redondeando al entero más cercano (igual que el dominio)."""
+    r = round(v)
+    return str(r) if r != 0 else '1'
+
+
+def _render_latex(expr: str, font_size: float = 14) -> Image:
+    """
+    Convierte una expresión LaTeX a una imagen PNG en memoria
+    y la devuelve como un flowable Image de ReportLab.
+    """
+    fig, ax = plt.subplots(figsize=(0.01, 0.01))
+    ax.axis('off')
+    text = ax.text(
+        0.5, 0.5, f'${expr}$',
+        fontsize=font_size,
+        ha='center', va='center',
+        transform=fig.transFigure,
+    )
+
+    # Ajustar el canvas al tamaño real del texto
+    fig.canvas.draw()
+    bbox = text.get_window_extent(renderer=fig.canvas.get_renderer())
+    pad = 4
+    fig.set_size_inches(
+        (bbox.width + pad * 2) / fig.dpi,
+        (bbox.height + pad * 2) / fig.dpi,
+    )
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=150, bbox_inches='tight',
+                transparent=True, pad_inches=0.04)
+    plt.close(fig)
+    buf.seek(0)
+
+    img = Image(buf)
+    # Escalar para que encaje bien en la página
+    max_width = 12 * cm
+    if img.drawWidth > max_width:
+        scale = max_width / img.drawWidth
+        img.drawWidth  *= scale
+        img.drawHeight *= scale
+    return img
 
 
 class GeneradorPDF:
@@ -32,8 +86,6 @@ class GeneradorPDF:
         doc.build(self._build_story(ecuaciones))
         return tmp.name
 
-    # ------------------------------------------------------------------
-    # Story builder
     # ------------------------------------------------------------------
 
     def _build_story(self, ecuaciones: list) -> list:
@@ -59,10 +111,14 @@ class GeneradorPDF:
         return story
 
     def _eq_block(self, eq: dict, num: int, st: dict) -> list:
-        caso = eq.get('caso', 0)
-        raices = eq.get('raices', {})
-        timestamp = eq.get('timestamp', '')
+        caso       = eq.get('caso', 0)
+        timestamp  = eq.get('timestamp', '')
         caso_color = {1: '#2e7d32', 2: '#1565c0', 3: '#6a1b9a'}.get(caso, '#424242')
+
+        # Expresiones LaTeX ya calculadas por el dominio
+        ec_latex  = eq.get('ecuacion_latex', eq.get('ecuacion_str', ''))
+        r_latex   = eq.get('raices_latex', self._fallback_roots(caso, eq.get('raices', {})))
+        sol_latex = eq.get('solucion_latex', '')
 
         block = [
             Paragraph(
@@ -77,66 +133,31 @@ class GeneradorPDF:
             ),
             Spacer(1, 0.2 * cm),
             Paragraph('<b>Ecuaci&#243;n:</b>', st['label']),
-            Paragraph(self._fmt_equation(eq.get('ecuacion_str', '')), st['math']),
+            _render_latex(ec_latex, font_size=13),
+            Spacer(1, 0.1 * cm),
             Paragraph('<b>Ra&#237;ces:</b>', st['label']),
-            Paragraph(self._fmt_roots(caso, raices), st['math']),
+            _render_latex(r_latex, font_size=13),
+            Spacer(1, 0.1 * cm),
             Paragraph('<b>Soluci&#243;n general:</b>', st['label']),
-            Paragraph(self._fmt_solution(caso, raices), st['math']),
+            _render_latex(sol_latex, font_size=13),
         ]
         return block
 
-    # ------------------------------------------------------------------
-    # Math formatting (Latin-1 safe + reportlab markup)
-    # ------------------------------------------------------------------
-
-    def _fmt_equation(self, ec_str: str) -> str:
-        # Replace ASCII '' / ' with unicode prime characters (Latin-1 range U+00xx covered)
-        # y'' -> y" (double prime U+2033 is NOT Latin-1, use two apostrophes as-is)
-        return ec_str  # already ASCII-safe from obtener_representacion()
-
-    def _fmt_roots(self, caso: int, raices: dict) -> str:
+    def _fallback_roots(self, caso: int, raices: dict) -> str:
+        """Genera LaTeX de raíces con valores redondeados si el dict no trae raices_latex."""
         if caso == 1:
-            r1, r2 = raices.get('r1', 0), raices.get('r2', 0)
-            return (f'r<sub>1</sub> = {r1:.4g}'
-                    f'&nbsp;&nbsp;&nbsp;&nbsp;'
-                    f'r<sub>2</sub> = {r2:.4g}')
+            r1 = _fmt_int(raices.get('r1', 0))
+            r2 = _fmt_int(raices.get('r2', 0))
+            return fr'r_1 = {r1},\quad r_2 = {r2}'
         if caso == 2:
-            r = raices.get('r', 0)
-            return f'r = {r:.4g}  (ra&#237;z doble)'
+            r = _fmt_int(raices.get('r', 0))
+            return fr'r = {r}\;(\text{{raíz doble}})'
         if caso == 3:
-            real = raices.get('real', 0)
-            imag = raices.get('imag', 0)
-            return f'r = {real:.4g} &#177; {imag:.4g}i'
+            real = _fmt_int(raices.get('real', 0))
+            imag = _fmt_int(raices.get('imag', 0))
+            return fr'r = {real} \pm {imag}\,i'
         return ''
 
-    def _fmt_solution(self, caso: int, raices: dict) -> str:
-        def e(v: float) -> str:
-            if v == 0: return '0'
-            if v == 1: return ''
-            if v == -1: return '-'
-            return str(int(v)) if v == int(v) else f'{v:.4g}'
-
-        if caso == 1:
-            r1, r2 = raices.get('r1', 0), raices.get('r2', 0)
-            return (f'y(x) = C<sub>1</sub> e<super>({e(r1)}x)</super>'
-                    f' + C<sub>2</sub> e<super>({e(r2)}x)</super>')
-        if caso == 2:
-            r = raices.get('r', 0)
-            return (f'y(x) = (C<sub>1</sub> + C<sub>2</sub> x)'
-                    f' e<super>({e(r)}x)</super>')
-        if caso == 3:
-            real = raices.get('real', 0)
-            imag = raices.get('imag', 0)
-            b = f'{imag:.4g}'
-            if real == 0:
-                return (f'y(x) = C<sub>1</sub> cos({b}x)'
-                        f' + C<sub>2</sub> sin({b}x)')
-            return (f'y(x) = e<super>({e(real)}x)</super>'
-                    f' [ C<sub>1</sub> cos({b}x) + C<sub>2</sub> sin({b}x) ]')
-        return ''
-
-    # ------------------------------------------------------------------
-    # Styles
     # ------------------------------------------------------------------
 
     def _styles(self) -> dict:
@@ -165,10 +186,5 @@ class GeneradorPDF:
                 'pdf_label', parent=base['Normal'],
                 fontSize=8, textColor=colors.HexColor('#757575'),
                 spaceBefore=6, spaceAfter=2,
-            ),
-            'math': ParagraphStyle(
-                'pdf_math', parent=base['Normal'],
-                fontSize=11, fontName='Courier',
-                spaceAfter=2, leading=17, leftIndent=0.5 * cm,
             ),
         }
