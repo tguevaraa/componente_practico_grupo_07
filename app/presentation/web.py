@@ -2,6 +2,7 @@ import os
 import hashlib
 
 from flask import Flask, jsonify, render_template, request, send_file, session
+from flask_sqlalchemy import SQLAlchemy
 
 from ..domain.entities import EcuacionSegundoOrden
 from ..infrastructure.pdf_generator import GeneradorPDF
@@ -14,19 +15,47 @@ flask_app = Flask(
     template_folder=os.path.join(_ROOT, 'templates'),
     static_folder=os.path.join(_ROOT, 'static'),
 )
+
 flask_app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-edo-unemi-2024')
 
-_gestor = WebGestorPersistencia()
-_pdf_gen = GeneradorPDF()
+_DB_URL = os.environ.get(
+    'DATABASE_URL',
+    'mysql+pymysql://root:aqFvCTSKpezdQzGjrnZbOEuYQpQqHmCU@tokaido.proxy.rlwy.net:48787/railway'
+)
+flask_app.config['SQLALCHEMY_DATABASE_URI'] = _DB_URL
+flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Usuarios en memoria: { email: hashed_password }
-_usuarios: dict[str, str] = {}
+db = SQLAlchemy(flask_app)
 
 PDF_FREE_LIMIT = 4
 
 
+# ──────────────────────────────────────────────
+# Modelo
+# ──────────────────────────────────────────────
+
+class Usuario(db.Model):
+    __tablename__ = 'usuarios'
+
+    id       = db.Column(db.Integer, primary_key=True)
+    email    = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(64), nullable=False)
+
+    def verificar_password(self, password: str) -> bool:
+        return self.password == _hash(password)
+
+
 def _hash(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
+
+
+# Crear tabla si no existe
+with flask_app.app_context():
+    db.create_all()
+
+
+_gestor  = WebGestorPersistencia()
+_pdf_gen = GeneradorPDF()
 
 
 # ──────────────────────────────────────────────
@@ -50,7 +79,7 @@ def auth_status():
 
 @flask_app.route('/api/auth/register', methods=['POST'])
 def auth_register():
-    data = request.get_json(silent=True) or {}
+    data     = request.get_json(silent=True) or {}
     email    = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
 
@@ -58,21 +87,26 @@ def auth_register():
         return jsonify({'error': 'Email y contraseña son requeridos.'}), 400
     if len(password) < 6:
         return jsonify({'error': 'La contraseña debe tener al menos 6 caracteres.'}), 400
-    if email in _usuarios:
+
+    if Usuario.query.filter_by(email=email).first():
         return jsonify({'error': 'Ese correo ya está registrado.'}), 409
 
-    _usuarios[email] = _hash(password)
+    usuario = Usuario(email=email, password=_hash(password))
+    db.session.add(usuario)
+    db.session.commit()
+
     session['user'] = email
     return jsonify({'ok': True, 'email': email}), 201
 
 
 @flask_app.route('/api/auth/login', methods=['POST'])
 def auth_login():
-    data = request.get_json(silent=True) or {}
+    data     = request.get_json(silent=True) or {}
     email    = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
 
-    if _usuarios.get(email) != _hash(password):
+    usuario = Usuario.query.filter_by(email=email).first()
+    if not usuario or not usuario.verificar_password(password):
         return jsonify({'error': 'Correo o contraseña incorrectos.'}), 401
 
     session['user'] = email
