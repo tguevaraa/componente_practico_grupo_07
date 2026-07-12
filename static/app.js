@@ -338,6 +338,7 @@ async function handleAuthSubmit(e) {
       ciudad:           document.getElementById('reg-ciudad').value.trim(),
       rol:              document.getElementById('reg-rol').value || null,
       nivel:            document.getElementById('reg-nivel').value || null,
+      genero:           document.getElementById('reg-genero').value || null,
       institucion:      document.getElementById('reg-institucion').value.trim(),
     };
   } else {

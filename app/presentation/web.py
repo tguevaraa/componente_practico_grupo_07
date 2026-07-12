@@ -47,6 +47,7 @@ class Usuario(db.Model):
     ciudad             = db.Column(db.String(80),   nullable=True)
     rol                = db.Column(db.String(20),   nullable=True)   # 'estudiante' | 'maestro'
     nivel              = db.Column(db.String(20),   nullable=True)   # 'bachiller' | 'grado' | 'postgrado'
+    genero             = db.Column(db.String(20),   nullable=True)   # 'masculino' | 'femenino' | 'otro' | 'prefiero_no_decir'
     institucion        = db.Column(db.String(180),  nullable=True)
 
     def verificar_password(self, password: str) -> bool:
@@ -119,6 +120,7 @@ def auth_register():
         ciudad           = (data.get('ciudad') or '').strip() or None,
         rol              = data.get('rol') or None,
         nivel            = data.get('nivel') or None,
+        genero           = data.get('genero') or None,
         institucion      = (data.get('institucion') or '').strip() or None,
     )
     db.session.add(usuario)
