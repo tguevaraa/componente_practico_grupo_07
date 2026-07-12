@@ -1,25 +1,20 @@
 /* ============================================================
    app.js — lógica de la interfaz web del solucionador de EDO
-   Historial en localStorage → funciona en local y en Vercel
+   Historial: DB (usuario logueado) / localStorage (anónimo)
    ============================================================ */
 
-const STORAGE_KEY_BASE = 'edo_historial';
-
-// Clave dinámica: por usuario si hay sesión, anónima si no
-function storageKey() {
-  return _authUser ? `${STORAGE_KEY_BASE}_${_authUser}` : STORAGE_KEY_BASE;
-}
+const STORAGE_KEY = 'edo_historial';
 
 // ------------------------------------------------------------------
-// localStorage — historial del cliente
+// localStorage — historial anónimo
 // ------------------------------------------------------------------
 function storageLoad() {
-  try { return JSON.parse(localStorage.getItem(storageKey()) || '[]'); }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
   catch { return []; }
 }
 
 function storageSave(lista) {
-  localStorage.setItem(storageKey(), JSON.stringify(lista));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
 }
 
 function storageAdd(datos) {
@@ -34,7 +29,7 @@ function storageAdd(datos) {
 }
 
 // ------------------------------------------------------------------
-// API helpers (solo resolver + PDF)
+// API helpers
 // ------------------------------------------------------------------
 const API = {
   resolver(a, b, c) {
@@ -43,6 +38,21 @@ const API = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ a, b, c }),
     }).then(parseJson);
+  },
+  async guardar(datos) {
+    const res = await fetch('/api/guardar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(datos),
+    });
+    return res.json();
+  },
+  async listar() {
+    const res = await fetch('/api/ecuaciones');
+    return res.json();
+  },
+  async eliminar(id) {
+    return fetch(`/api/ecuaciones/${id}`, { method: 'DELETE' });
   },
   descargarPDF(lista) {
     return fetch('/api/descargar-pdf', {
@@ -141,24 +151,36 @@ function fmtNum(n) {
 }
 
 // ------------------------------------------------------------------
-// Save handler — guarda en localStorage
+// Save handler — DB si hay sesión, localStorage si no
 // ------------------------------------------------------------------
-function handleGuardar() {
+async function handleGuardar() {
   if (!currentResult) return;
   const btn = document.getElementById('btn-save');
   btn.disabled = true;
 
-  const lista = storageAdd(currentResult);
-  btn.textContent = '¡Guardada ✓';
-  btn.classList.add('saved');
-  renderHistory(lista);
+  if (_authUser) {
+    await API.guardar(currentResult);
+    btn.textContent = '¡Guardada ✓';
+    btn.classList.add('saved');
+    await loadHistory();
+  } else {
+    const lista = storageAdd(currentResult);
+    btn.textContent = '¡Guardada ✓';
+    btn.classList.add('saved');
+    renderHistory(lista);
+  }
 }
 
 // ------------------------------------------------------------------
-// History — lee desde localStorage
+// History — DB si hay sesión, localStorage si no
 // ------------------------------------------------------------------
-function loadHistory() {
-  renderHistory(storageLoad());
+async function loadHistory() {
+  if (_authUser) {
+    const lista = await API.listar();
+    renderHistory(lista);
+  } else {
+    renderHistory(storageLoad());
+  }
 }
 
 function renderHistory(lista) {
@@ -173,7 +195,9 @@ function renderHistory(lista) {
 
   pdfBtn.disabled = false;
 
-  const items = lista.map((eq, idx) => `
+  const items = lista.map((eq, idx) => {
+    const deleteArg = _authUser ? eq.id : idx;
+    return `
     <div class="hist-item">
       <div class="hist-header">
         <span class="hist-num">#${eq.id}</span>
@@ -181,12 +205,12 @@ function renderHistory(lista) {
           Caso ${eq.caso}
         </span>
         <span class="hist-time">${eq.timestamp || ''}</span>
-        <button class="btn-delete-eq" onclick="deleteEquation(${idx})" title="Eliminar ecuación">&times;</button>
+        <button class="btn-delete-eq" onclick="deleteEquation(${deleteArg})" title="Eliminar ecuación">&times;</button>
       </div>
       <div class="hist-eq">\\( ${eq.ecuacion_latex} \\)</div>
       <div class="hist-sol">\\( ${eq.solucion_latex} \\)</div>
     </div>
-  `).join('');
+  `}).join('');
 
   container.innerHTML = `<div class="hist-list">${items}</div>`;
   typeset(container);
@@ -195,13 +219,17 @@ function renderHistory(lista) {
 // ------------------------------------------------------------------
 // Delete equation from history
 // ------------------------------------------------------------------
-function deleteEquation(idx) {
-  const lista = storageLoad();
-  lista.splice(idx, 1);
-  // Re-numerar ids
-  lista.forEach((eq, i) => eq.id = i + 1);
-  storageSave(lista);
-  renderHistory(lista);
+async function deleteEquation(idxOrId) {
+  if (_authUser) {
+    await API.eliminar(idxOrId);
+    await loadHistory();
+  } else {
+    const lista = storageLoad();
+    lista.splice(idxOrId, 1);
+    lista.forEach((eq, i) => eq.id = i + 1);
+    storageSave(lista);
+    renderHistory(lista);
+  }
 }
 
 // ------------------------------------------------------------------

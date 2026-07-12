@@ -1,5 +1,7 @@
 import os
 import hashlib
+import json
+from datetime import datetime, timezone
 
 from flask import Flask, jsonify, render_template, request, send_file, session
 from flask_sqlalchemy import SQLAlchemy
@@ -50,8 +52,41 @@ class Usuario(db.Model):
     genero             = db.Column(db.String(20),   nullable=True)   # 'masculino' | 'femenino' | 'otro' | 'prefiero_no_decir'
     institucion        = db.Column(db.String(180),  nullable=True)
 
+    ecuaciones = db.relationship('Ecuacion', backref='usuario', lazy=True,
+                                 cascade='all, delete-orphan')
+
     def verificar_password(self, password: str) -> bool:
         return self.password == _hash(password)
+
+
+class Ecuacion(db.Model):
+    __tablename__ = 'ecuaciones'
+
+    id             = db.Column(db.Integer, primary_key=True)
+    usuario_id     = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    ecuacion_str   = db.Column(db.String(100),  nullable=True)
+    ecuacion_latex = db.Column(db.String(200),  nullable=True)
+    discriminante  = db.Column(db.Float,        nullable=True)
+    caso           = db.Column(db.Integer,      nullable=True)
+    tipo           = db.Column(db.String(60),   nullable=True)
+    raices_latex   = db.Column(db.String(200),  nullable=True)
+    solucion_latex = db.Column(db.String(300),  nullable=True)
+    raices_json    = db.Column(db.Text,         nullable=True)  # JSON string
+    timestamp      = db.Column(db.DateTime,     default=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self) -> dict:
+        return {
+            'id':             self.id,
+            'ecuacion_str':   self.ecuacion_str,
+            'ecuacion_latex': self.ecuacion_latex,
+            'discriminante':  self.discriminante,
+            'caso':           self.caso,
+            'tipo':           self.tipo,
+            'raices_latex':   self.raices_latex,
+            'solucion_latex': self.solucion_latex,
+            'raices':         json.loads(self.raices_json or '{}'),
+            'timestamp':      self.timestamp.strftime('%d/%m/%Y %H:%M') if self.timestamp else '',
+        }
 
 
 def _hash(password: str) -> str:
@@ -192,13 +227,56 @@ def guardar():
     data = request.get_json(silent=True)
     if not data:
         return jsonify({'error': 'Sin datos'}), 400
+
+    email = session.get('user')
+    if email:
+        usuario = Usuario.query.filter_by(email=email).first()
+        if usuario:
+            eq = Ecuacion(
+                usuario_id     = usuario.id,
+                ecuacion_str   = data.get('ecuacion_str'),
+                ecuacion_latex = data.get('ecuacion_latex'),
+                discriminante  = data.get('discriminante'),
+                caso           = data.get('caso'),
+                tipo           = data.get('tipo'),
+                raices_latex   = data.get('raices_latex'),
+                solucion_latex = data.get('solucion_latex'),
+                raices_json    = json.dumps(data.get('raices', {})),
+            )
+            db.session.add(eq)
+            db.session.commit()
+            total = Ecuacion.query.filter_by(usuario_id=usuario.id).count()
+            return jsonify({'ok': True, 'total': total, 'id': eq.id, 'db': True})
+
+    # Fallback anónimo
     _gestor.agregar(data)
-    return jsonify({'ok': True, 'total': len(_gestor.listar())})
+    return jsonify({'ok': True, 'total': len(_gestor.listar()), 'db': False})
 
 
 @flask_app.route('/api/ecuaciones', methods=['GET'])
 def listar_ecuaciones():
+    email = session.get('user')
+    if email:
+        usuario = Usuario.query.filter_by(email=email).first()
+        if usuario:
+            eqs = Ecuacion.query.filter_by(usuario_id=usuario.id)\
+                                .order_by(Ecuacion.id).all()
+            return jsonify([e.to_dict() for e in eqs])
     return jsonify(_gestor.listar())
+
+
+@flask_app.route('/api/ecuaciones/<int:eq_id>', methods=['DELETE'])
+def eliminar_ecuacion(eq_id):
+    email = session.get('user')
+    if not email:
+        return jsonify({'error': 'No autenticado'}), 401
+    usuario = Usuario.query.filter_by(email=email).first()
+    eq = Ecuacion.query.filter_by(id=eq_id, usuario_id=usuario.id).first()
+    if not eq:
+        return jsonify({'error': 'No encontrada'}), 404
+    db.session.delete(eq)
+    db.session.commit()
+    return jsonify({'ok': True})
 
 
 # ──────────────────────────────────────────────
@@ -207,7 +285,16 @@ def listar_ecuaciones():
 
 @flask_app.route('/api/descargar-pdf', methods=['GET', 'POST'])
 def descargar_pdf():
-    if request.method == 'POST':
+    email = session.get('user')
+    if email:
+        usuario = Usuario.query.filter_by(email=email).first()
+        if usuario:
+            eqs = Ecuacion.query.filter_by(usuario_id=usuario.id)\
+                                .order_by(Ecuacion.id).all()
+            ecuaciones = [e.to_dict() for e in eqs]
+        else:
+            ecuaciones = []
+    elif request.method == 'POST':
         ecuaciones = request.get_json(silent=True) or []
     else:
         ecuaciones = _gestor.listar()
