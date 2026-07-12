@@ -300,6 +300,17 @@ body {
 }
 .hist-num  { font-weight: 700; color: var(--primary); font-size: .9rem; }
 .hist-time { font-size: .78rem; color: var(--muted); margin-left: auto; }
+.btn-delete-eq {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 .2rem;
+  transition: color .15s;
+}
+.btn-delete-eq:hover { color: #c62828; }
 
 .hist-eq  { font-size: .95rem; margin-bottom: .3rem; }
 .hist-sol { font-size: .9rem; color: var(--muted); }

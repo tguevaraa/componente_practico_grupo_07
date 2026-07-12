@@ -168,7 +168,7 @@ function renderHistory(lista) {
 
   pdfBtn.disabled = false;
 
-  const items = lista.map(eq => `
+  const items = lista.map((eq, idx) => `
     <div class="hist-item">
       <div class="hist-header">
         <span class="hist-num">#${eq.id}</span>
@@ -176,6 +176,7 @@ function renderHistory(lista) {
           Caso ${eq.caso}
         </span>
         <span class="hist-time">${eq.timestamp || ''}</span>
+        <button class="btn-delete-eq" onclick="deleteEquation(${idx})" title="Eliminar ecuación">&times;</button>
       </div>
       <div class="hist-eq">\\( ${eq.ecuacion_latex} \\)</div>
       <div class="hist-sol">\\( ${eq.solucion_latex} \\)</div>
@@ -184,6 +185,18 @@ function renderHistory(lista) {
 
   container.innerHTML = `<div class="hist-list">${items}</div>`;
   typeset(container);
+}
+
+// ------------------------------------------------------------------
+// Delete equation from history
+// ------------------------------------------------------------------
+function deleteEquation(idx) {
+  const lista = storageLoad();
+  lista.splice(idx, 1);
+  // Re-numerar ids
+  lista.forEach((eq, i) => eq.id = i + 1);
+  storageSave(lista);
+  renderHistory(lista);
 }
 
 // ------------------------------------------------------------------
