@@ -328,9 +328,27 @@ async function handleAuthSubmit(e) {
 
   let body;
   if (isRegister) {
+    const email    = document.getElementById('reg-email').value.trim();
+    const email2   = document.getElementById('reg-email2').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const password2= document.getElementById('reg-password2').value;
+
+    if (email !== email2) {
+      errEl.textContent = 'Los correos no coinciden.';
+      errEl.classList.remove('hidden');
+      submitBtn.disabled = false;
+      return;
+    }
+    if (password !== password2) {
+      errEl.textContent = 'Las contraseñas no coinciden.';
+      errEl.classList.remove('hidden');
+      submitBtn.disabled = false;
+      return;
+    }
+
     body = {
-      email:            document.getElementById('reg-email').value.trim(),
-      password:         document.getElementById('reg-password').value,
+      email,
+      password,
       nombres:          document.getElementById('reg-nombres').value.trim(),
       fecha_nacimiento: document.getElementById('reg-fecha').value || null,
       pais:             document.getElementById('reg-pais').value.trim(),
